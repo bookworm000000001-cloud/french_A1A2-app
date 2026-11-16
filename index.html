@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parler — French A1 to A2 iOS App</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for crisp iOS-style icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        frenchNavy: '#1E3A8A',
+                        frenchBlue: '#2563EB',
+                        frenchCoral: '#E11D48',
+                        iosBg: '#F2F4F8',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbar hiding for authentic mobile feel */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* 3D Card Flip Animation */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        /* Subtle iOS Spring & Shake Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.92); opacity: 0; }
+            70% { transform: scale(1.03); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(30, 58, 138, 0.4); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(30, 58, 138, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(30, 58, 138, 0); }
+        }
+        .speaking-pulse {
+            animation: pulse-ring 1.2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-200 min-h-screen w-full flex items-center justify-center sm:p-4 md:p-6 font-sans antialiased text-slate-900 selection:bg-frenchNavy selection:text-white">
+
+    <!-- iPhone Hardware Bezel Container (Full-screen on small mobile, Realistic iPhone frame on tablet/desktop) -->
+    <div id="iphone-frame" class="relative w-full h-[100dvh] sm:w-[393px] sm:h-[852px] sm:max-h-[92vh] bg-iosBg sm:rounded-[54px] sm:border-[11px] sm:border-slate-900 sm:shadow-[0_25px_70px_-15px_rgba(15,23,42,0.45),0_0_0_2px_#334155] flex flex-col overflow-hidden transition-all duration-300">
+        
+        <!-- Hardware Side Buttons (Decorative for desktop view) -->
+        <div class="hidden sm:block absolute -left-[14px] top-[120px] w-[3px] h-[28px] bg-slate-700 rounded-l-md"></div>
+        <div class="hidden sm:block absolute -left-[14px] top-[170px] w-[3px] h-[52px] bg-slate-700 rounded-l-md"></div>
+        <div class="hidden sm:block absolute -left-[14px] top-[235px] w-[3px] h-[52px] bg-slate-700 rounded-l-md"></div>
+        <div class="hidden sm:block absolute -right-[14px] top-[190px] w-[3px] h-[76px] bg-slate-700 rounded-r-md"></div>
+
+        <!-- iOS Top Status Bar & Dynamic Island -->
+        <header class="relative z-30 bg-white/90 backdrop-blur-md pt-2.5 pb-2 px-6 flex items-center justify-between select-none shrink-0 border-b border-slate-100">
+            <!-- Live Time -->
+            <span id="ios-clock" class="text-[14px] font-semibold tracking-tight text-slate-900 w-14">9:41</span>
+            
+            <!-- Dynamic Island -->
+            <div class="w-[116px] h-[30px] bg-black rounded-full flex items-center justify-between px-3 shadow-inner transition-all duration-300" id="dynamic-island">
+                <div class="w-2.5 h-2.5 rounded-full bg-indigo-950 border border-slate-800 flex items-center justify-center">
+                    <div class="w-1 h-1 rounded-full bg-blue-500/60"></div>
+                </div>
+                <div id="island-indicator" class="flex items-center gap-1 opacity-0 transition-opacity duration-200">
+                    <span class="w-1 h-2.5 bg-frenchCoral rounded-full animate-pulse"></span>
+                    <span class="w-1 h-3.5 bg-frenchBlue rounded-full animate-pulse"></span>
+                    <span class="w-1 h-2 bg-white rounded-full animate-pulse"></span>
+                </div>
+            </div>
+
+            <!-- iOS Status Icons -->
+            <div class="flex items-center gap-1.5 text-slate-900 text-[12px] w-14 justify-end">
+                <i class="fa-solid fa-signal"></i>
+                <i class="fa-solid fa-wifi"></i>
+                <i class="fa-solid fa-battery-full text-[14px]"></i>
+            </div>
+        </header>
+
+        <!-- Custom In-App Toast / Notification Banner (Replaces alert()) -->
+        <div id="ios-toast" class="absolute top-14 left-4 right-4 z-50 pointer-events-none transform -translate-y-24 opacity-0 transition-all duration-300">
+            <div class="bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-white/10">
+                <div id="toast-icon" class="w-7 h-7 rounded-full bg-frenchCoral flex items-center justify-center shrink-0 text-xs">
+                    <i class="fa-solid fa-sparkles"></i>
+                </div>
+                <p id="toast-message" class="text-xs font-medium leading-snug"></p>
+            </div>
+        </div>
+
+        <!-- MAIN SCROLLABLE CONTENT AREA -->
+        <main id="app-viewport" class="flex-1 overflow-y-auto no-scrollbar relative flex flex-col">
+            <!-- Dynamic Tab Views will be rendered here -->
+        </main>
+
+        <!-- LESSON PLAYER MODAL OVERLAY (Covers full mobile viewport when active) -->
+        <div id="lesson-overlay" class="absolute inset-0 z-40 bg-white flex flex-col transform translate-y-full transition-transform duration-300 ease-out hidden">
+            <!-- Top Lesson Header -->
+            <div class="pt-12 pb-3 px-5 flex items-center gap-3 border-b border-slate-100 bg-white shrink-0">
+                <button onclick="closeLesson()" aria-label="Close lesson" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 flex items-center justify-center text-slate-600 transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+                <!-- Step Progress Bar -->
+                <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div id="lesson-progress-bar" class="h-full bg-gradient-to-r from-frenchNavy to-frenchBlue rounded-full transition-all duration-300" style="width: 10%"></div>
+                </div>
+                <span id="lesson-step-counter" class="text-xs font-bold text-slate-500 min-w-[36px] text-right">1/6</span>
+            </div>
+
+            <!-- Lesson Stage Container -->
+            <div id="lesson-stage" class="flex-1 overflow-y-auto no-scrollbar p-5 flex flex-col justify-between">
+                <!-- Flashcards / Quizzes injected dynamically -->
+            </div>
+        </div>
+
+        <!-- iOS BOTTOM TAB NAVIGATION BAR -->
+        <nav class="relative z-30 bg-white/95 backdrop-blur-lg border-t border-slate-200/80 px-2 pt-2 pb-5 sm:pb-6 shrink-0 select-none">
+            <div class="grid grid-cols-4 gap-1">
+                <button onclick="switchTab('learn')" data-tab="learn" class="nav-btn flex flex-col items-center justify-center py-1 rounded-xl transition active:scale-95 text-frenchNavy">
+                    <i class="fa-solid fa-map-location-dot text-[20px] mb-1"></i>
+                    <span class="text-[10px] font-bold tracking-tight">Learn</span>
+                </button>
+                <button onclick="switchTab('practice')" data-tab="practice" class="nav-btn flex flex-col items-center justify-center py-1 rounded-xl transition active:scale-95 text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-bolt text-[20px] mb-1"></i>
+                    <span class="text-[10px] font-semibold tracking-tight">Practice</span>
+                </button>
+                <button onclick="switchTab('vocab')" data-tab="vocab" class="nav-btn flex flex-col items-center justify-center py-1 rounded-xl transition active:scale-95 text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-book-bookmark text-[20px] mb-1"></i>
+                    <span class="text-[10px] font-semibold tracking-tight">Vocab</span>
+                </button>
+                <button onclick="switchTab('profile')" data-tab="profile" class="nav-btn flex flex-col items-center justify-center py-1 rounded-xl transition active:scale-95 text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-user-astronaut text-[20px] mb-1"></i>
+                    <span class="text-[10px] font-semibold tracking-tight">Profile</span>
+                </button>
+            </div>
+            <!-- iOS Home Indicator Bar -->
+            <div class="w-32 h-1 bg-slate-900/80 rounded-full mx-auto mt-2.5"></div>
+        </nav>
+
+    </div>
+
+    <!-- APPLICATION LOGIC & CURRICULUM DATA -->
+    <script>
+        /**
+         * ============================================================================
+         * 1. STRUCTURED A1 TO A2 FRENCH CURRICULUM DATA
+         * ============================================================================
+         */
+        const CURRICULUM = [
+            // ================= A1 MODULES =================
+            {
+                id: 'a1-1',
+                level: 'A1',
+                title: 'Greetings & Introductions',
+                frenchTitle: 'Salutations et présentations',
+                icon: 'fa-hand-sparkles',
+                color: 'from-blue-800 to-indigo-900',
+                badgeColor: 'bg-blue-100 text-frenchNavy',
+                xpReward: 50,
+                flashcards: [
+                    { fr: 'Bonjour, enchanté !', phonetic: 'bohn-zhoor, ahn-shahn-tay', en: 'Hello, nice to meet you!', note: 'Use "enchantée" if you are female.' },
+                    { fr: 'Comment ça va ?', phonetic: 'koh-mahn sah vah', en: 'How is it going?', note: 'Informal & everyday friendly greeting.' },
+                    { fr: 'Je m’appelle Camille.', phonetic: 'zhuh mah-pel kah-mee', en: 'My name is Camille.', note: 'Literally "I call myself Camille".' }
+                ],
+                quizzes: [
+                    {
+                        type: 'mc',
+                        prompt: 'How do you say "Nice to meet you" in French?',
+                        audioText: 'Enchanté',
+                        options: ['Enchanté', 'Au revoir', 'S’il vous plaît', 'À bientôt'],
+                        answer: 'Enchanté',
+                        explanation: '"Enchanté(e)" literally means "delighted" and is the standard way to say nice to meet you.'
+                    },
+                    {
+                        type: 'fill',
+                        prompt: 'Complete the introduction:',
+                        sentenceBefore: 'Je',
+                        sentenceAfter: 'Lucas.',
+                        options: ['m’appelle', 'suis appelé', 'appelle', 'nom'],
+                        answer: 'm’appelle',
+                        explanation: 'French uses the reflexive verb "s’appeler" (je m’appelle) for names.'
+                    },
+                    {
+                        type: 'tiles',
+                        prompt: 'Translate: "Hello, how are you?"',
+                        targetSentence: 'Bonjour comment ça va',
+                        tiles: ['ça', 'Bonjour', 'va', 'merci', 'comment'],
+                        explanation: '"Bonjour, comment ça va ?" is a classic, polite yet warm greeting.'
+                    }
+                ]
+            },
+            {
+                id: 'a1-2',
+                level: 'A1',
+                title: 'Numbers & Time',
+                frenchTitle: 'Les nombres et l’heure',
+                icon: 'fa-clock',
+                color: 'from-indigo-700 to-blue-900',
+                badgeColor: 'bg-blue-100 text-frenchNavy',
+                xpReward: 50,
+                flashcards: [
+                    { fr: 'Quelle heure est-il ?', phonetic: 'kel uhr ay-teel', en: 'What time is it?', note: 'Standard way to ask the time.' },
+                    { fr: 'Il est trois heures et demie.', phonetic: 'eel ay trwahz uhr ay duh-mee', en: 'It is three thirty (3:30).', note: '"Et demie" means half past.' },
+                    { fr: 'J’ai vingt-cinq ans.', phonetic: 'zhay vant-sank ahn', en: 'I am twenty-five years old.', note: 'French uses "avoir" (to have) for age!' }
+                ],
+                quizzes: [
+                    {
+                        type: 'mc',
+                        prompt: 'How do you express your age in French?',
+                        audioText: 'J’ai vingt ans',
+                        options: ['J’ai vingt ans', 'Je suis vingt ans', 'Mon âge vingt', 'Il est vingt ans'],
+                        answer: 'J’ai vingt ans',
+                        explanation: 'In French, you "have" years (J’ai... ans) rather than "being" years.'
+                    },
+                    {
+                        type: 'fill',
+                        prompt: 'Fill in the missing word for "It is 3:30":',
+                        sentenceBefore: 'Il est trois heures et',
+                        sentenceAfter: '.',
+                        options: ['demie', 'quart', 'minuit', 'midi'],
+                        answer: 'demie',
+                        explanation: '"Et demie" adds half an hour to the time.'
+                    },
+                    {
+                        type: 'tiles',
+                        prompt: 'Ask: "What time is it?"',
+                        targetSentence: 'Quelle heure est-il',
+                        tiles: ['est-il', 'Quelle', 'jour', 'heure'],
+                        explanation: '"Quelle heure est-il ?" literally translates to "Which hour is it?"'
+                    }
+                ]
+            },
+            {
+                id: 'a1-3',
+                level: 'A1',
+                title: 'Food & Café Ordering',
+                frenchTitle: 'Au café et au restaurant',
+                icon: 'fa-mug-hot',
+                color: 'from-blue-900 to-slate-800',
+                badgeColor: 'bg-blue-100 text-frenchNavy',
+                xpReward: 60,
+                flashcards: [
+                    { fr: 'Je voudrais un café, s’il vous plaît.', phonetic: 'zhuh voo-dray uhn kah-fay, seel voo play', en: 'I would like a coffee, please.', note: '"Je voudrais" is much more polite than "Je veux".' },
+                    { fr: 'L’addition, s’il vous plaît.', phonetic: 'lah-dee-syohn, seel voo play', en: 'The check/bill, please.', note: 'Essential phrase at any Parisian bistro.' },
+                    { fr: 'C’est délicieux !', phonetic: 'say day-lee-syuh', en: 'It is delicious!', note: 'Great compliment for the chef or host.' }
+                ],
+                quizzes: [
+                    {
+                        type: 'mc',
+                        prompt: 'Which is the politest way to order a croissant?',
+                        audioText: 'Je voudrais un croissant',
+                        options: ['Je voudrais un croissant', 'Donne un croissant', 'Croissant maintenant', 'Je veux croissant'],
+                        answer: 'Je voudrais un croissant',
+                        explanation: '"Je voudrais" (I would like) is the golden rule of French politeness.'
+                    },
+                    {
+                        type: 'fill',
+                        prompt: 'Ask for the bill at the end of your meal:',
+                        sentenceBefore: '',
+                        sentenceAfter: ', s’il vous plaît.',
+                        options: ['L’addition', 'Le menu', 'L’eau', 'Le serveur'],
+                        answer: 'L’addition',
+                        explanation: '"L’addition" refers to the restaurant bill or check.'
+                    },
+                    {
+                        type: 'tiles',
+                        prompt: 'Translate: "I would like a coffee please"',
+                        targetSentence: 'Je voudrais un café s’il vous plaît',
+                        tiles: ['café', 'voudrais', 'Je', 's’il vous plaît', 'un'],
+                        explanation: 'Always pair your request with "s’il vous plaît" in French shops and cafés.'
+                    }
+                ]
+            },
+            {
+                id: 'a1-4',
+                level: 'A1',
+                title: 'Family & Daily Routine',
+                frenchTitle: 'La famille et le quotidien',
+                icon: 'fa-house-chimney-user',
+                color: 'from-sky-800 to-blue-950',
+                badgeColor: 'bg-blue-100 text-frenchNavy',
+                xpReward: 60,
+                flashcards: [
+                    { fr: 'Je me réveille à sept heures.', phonetic: 'zhuh muh ray-vay ah set uhr', en: 'I wake up at seven o’clock.', note: 'Reflexive verb: se réveiller.' },
+                    { fr: 'Ma sœur habite à Lyon.', phonetic: 'mah suhr ah-beet ah lyohn', en: 'My sister lives in Lyon.', note: '"Ma" is used before feminine nouns.' },
+                    { fr: 'Nous dînons ensemble ce soir.', phonetic: 'noo dee-nohn ahn-sahmbl suh swahr', en: 'We are having dinner together tonight.', note: '"Ce soir" means tonight / this evening.' }
+                ],
+                quizzes: [
+                    {
+                        type: 'mc',
+                        prompt: 'What does "Je me réveille" mean?',
+                        audioText: 'Je me réveille',
+                        options: ['I wake up', 'I go to sleep', 'I eat breakfast', 'I work'],
+                        answer: 'I wake up',
+                        explanation: '"Se réveiller" means to wake up; "se coucher" means to go to bed.'
+                    },
+                    {
+                        type: 'fill',
+                        prompt: 'Choose the right possessive for "sister" (feminine):',
+                        sentenceBefore: '',
+                        sentenceAfter: 'sœur habite à Paris.',
+                        options: ['Ma', 'Mon', 'Mes', 'Le'],
+                        answer: 'Ma',
+                        explanation: 'Use "ma" for singular feminine nouns like "sœur" or "mère".'
+                    },
+                    {
+                        type: 'tiles',
+                        prompt: 'Build: "My sister lives in Lyon"',
+                        targetSentence: 'Ma sœur habite à Lyon',
+                        tiles: ['habite', 'Lyon', 'Ma', 'à', 'sœur'],
+                        explanation: 'Use the preposition "à" before city names like Lyon or Paris.'
+                    }
+                ]
+            },
+            {
+                id: 'a1-5',
+                level: 'A1',
+                title: 'Directions & City',
+                frenchTitle: 'En ville et les directions',
+                icon: 'fa-compass',
+                color: 'from-blue-800 to-cyan-900',
+                badgeColor: 'bg-blue-100 text-frenchNavy',
+                xpReward: 65,
+                flashcards: [
+                    { fr: 'Où est la station de métro ?', phonetic: 'oo ay lah stah-syohn duh may-tro', en: 'Where is the subway station?', note: '"Où" with an accent means "where".' },
+                    { fr: 'Tournez à gauche, puis tout droit.', phonetic: 'toor-nay ah gohsh, pwee too drwah', en: 'Turn left, then straight ahead.', note: 'À gauche = left, à droite = right.' },
+                    { fr: 'La boulangerie est près d’ici.', phonetic: 'lah boo-lahn-zhree ay pray dee-see', en: 'The bakery is near here.', note: '"Près de" means near / close to.' }
+                ],
+                quizzes: [
+                    {
+                        type: 'mc',
+                        prompt: 'How do you say "straight ahead"?',
+                        audioText: 'Tout droit',
+                        options: ['Tout droit', 'À gauche', 'À droite', 'Derrière'],
+                        answer: 'Tout droit',
+                        explanation: '"Tout droit" means straight ahead (do not confuse with "à droite" = to the right!).'
+                    },
+                    {
+                        type: 'fill',
+                        prompt: 'Ask where the bakery is located:',
+                        sentenceBefore: '',
+                        sentenceAfter: 'est la boulangerie ?',
+                        options: ['Où', 'Qui', 'Quand', 'Pourquoi'],
+                        answer: 'Où',
+                        explanation: '"Où" means "where".'
+                    },
+                    {
+                        type: 'tiles',
+                        prompt: 'Translate: "Turn left then straight ahead"',
+                        targetSentence: 'Tournez à gauche puis tout droit',
+                        tiles: ['gauche', 'Tournez', 'tout droit', 'à', 'puis'],
+                        explanation: '"Puis" is a great connector word meaning "then" or "next".'
+                    }
+                ]
+            },
+
+            // ================= A2 MODULES =================
+            {
+                id: 'a2-1',
+                level: 'A2',
+                title: 'Past Tense (Passé Composé)',
+                frenchTitle: 'Raconter au passé composé',
+                icon: 'fa-clock-rotate-left',
+                color: 'from-rose-600 to-red-800',
+                badgeColor: 'bg-rose-100 text-frenchCoral',
+                xpReward: 80,
+                flashcards: [
+                    { fr: 'Hier, j’ai visité le musée.', phonetic: 'yehr, zhay vee-zee-tay luh mew-zay', en: 'Yesterday, I visited the museum.', note: 'Auxiliary "avoir" + past participle "visité".' },
+                    { fr: 'Elle est allée à Paris.', phonetic: 'el ay tah-lay ah pah-ree', en: 'She went to Paris.', note: 'Movement verbs like "aller" use "être" and agree in gender.' },
+                    { fr: 'Nous avons mangé une crêpe.', phonetic: 'noo zah-vohn mahn-zhay ewn krep', en: 'We ate a crêpe.', note: 'Past participle of -er verbs ends in -é.' }
+                ],
+                quizzes: [
+                    {
+                        type: 'mc',
+                        prompt: 'Which auxiliary verb does "aller" (to go) use in Passé Composé?',
+                        audioText: 'Elle est allée à Paris',
+                        options: ['Être (est allée)', 'Avoir (a allé)', 'Faire (fait allé)', 'Aller (va allé)'],
+                        answer: 'Être (est allée)',
+                        explanation: 'Verbs of motion/change of state (DR & MRS VANDERTRAMP) use "être" in the past.'
+                    },
+                    {
+                        type: 'fill',
+                        prompt: 'Complete the past tense: "Yesterday, I visited..."',
+                        sentenceBefore: 'Hier, j’ai',
+                        sentenceAfter: 'le Louvre.',
+                        options: ['visité', 'visiter', 'visite', 'visitais'],
+                        answer: 'visité',
+                        explanation: 'Regular -er verbs form their past participle with "-é".'
+                    },
+                    {
+                        type: 'tiles',
+                        prompt: 'Build: "We ate a crêpe"',
+                        targetSentence: 'Nous avons mangé une crêpe',
+                        tiles: ['mangé', 'Nous', 'une', 'avons', 'crêpe'],
+                        explanation: '"Nous avons mangé" = Auxiliary avoir + past participle mangé.'
+                    }
+                ]
+            },
+            {
+                id: 'a2-2',
+                level: 'A2',
+                title: 'Future Plans (Futur Proche)',
+                frenchTitle: 'Les projets et le futur proche',
+                icon: 'fa-calendar-check',
+                color: 'from-rose-700 to-indigo-900',
+                badgeColor: 'bg-rose-100 text-frenchCoral',
+                xpReward: 80,
+                flashcards: [
+                    { fr: 'Demain, je vais prendre le train.', phonetic: 'duh-man, zhuh vay prahn-druh luh tran', en: 'Tomorrow, I am going to take the train.', note: 'Conjugated "aller" + infinitive verb.' },
+                    { fr: 'Ce week-end, nous allons voyager.', phonetic: 'suh week-end, noo zah-lohn vwah-yah-zhay', en: 'This weekend, we are going to travel.', note: 'Futur proche expresses near, certain plans.' },
+                    { fr: 'Tu vas apprendre le français ?', phonetic: 'tew vah ah-prahn-druh luh frahn-say', en: 'Are you going to learn French?', note: 'Raise your intonation at the end to ask a question.' }
+                ],
+                quizzes: [
+                    {
+                        type: 'mc',
+                        prompt: 'How is the Futur Proche (near future) formed?',
+                        audioText: 'Je vais prendre le train',
+                        options: ['Aller + Infinitive', 'Avoir + Past Participle', 'Être + Adjective', 'Venir de + Infinitive'],
+                        answer: 'Aller + Infinitive',
+                        explanation: 'Just like English "going to + verb", French uses present tense "aller" + infinitive.'
+                    },
+                    {
+                        type: 'fill',
+                        prompt: 'Complete: "This weekend, we are going to travel."',
+                        sentenceBefore: 'Ce week-end, nous',
+                        sentenceAfter: 'voyager.',
+                        options: ['allons', 'avons', 'sommes', 'allez'],
+                        answer: 'allons',
+                        explanation: '"Nous allons" is the first-person plural conjugation of "aller".'
+                    },
+                    {
+                        type: 'tiles',
+                        prompt: 'Translate: "Tomorrow I am going to take the train"',
+                        targetSentence: 'Demain je vais prendre le train',
+                        tiles: ['vais', 'Demain', 'prendre', 'je', 'le train'],
+                        explanation: 'Notice "prendre" stays in its infinitive form right after "je vais".'
+                    }
+                ]
+            },
+            {
+                id: 'a2-3',
+                level: 'A2',
+                title: 'Shopping & Clothing',
+                frenchTitle: 'Les achats et les vêtements',
+                icon: 'fa-bag-shopping',
+                color: 'from-pink-700 to-rose-900',
+                badgeColor: 'bg-rose-100 text-frenchCoral',
+                xpReward: 85,
+                flashcards: [
+                    { fr: 'Je peux essayer cette veste ?', phonetic: 'zhuh puh ay-say-yay set vest', en: 'Can I try on this jacket?', note: '"Essayer" means to try on (clothes) or to try.' },
+                    { fr: 'C’est trop cher pour moi.', phonetic: 'say troh shehr poor mwah', en: 'It is too expensive for me.', note: '"Trop" means too / too much.' },
+                    { fr: 'Vous avez la taille moyenne ?', phonetic: 'voo zah-vay lah tah-yuh mwah-yen', en: 'Do you have the medium size?', note: 'La taille = clothing size.' }
+                ],
+                quizzes: [
+                    {
+                        type: 'mc',
+                        prompt: 'What do you ask to try on an item in a boutique?',
+                        audioText: 'Je peux essayer cette veste ?',
+                        options: ['Je peux essayer ?', 'Je peux payer ?', 'C’est fermé ?', 'Où est la sortie ?'],
+                        answer: 'Je peux essayer ?',
+                        explanation: '"Essayer" means to try on in a clothing store context.'
+                    },
+                    {
+                        type: 'fill',
+                        prompt: 'Say that an item is too expensive:',
+                        sentenceBefore: 'C’est',
+                        sentenceAfter: 'cher pour moi.',
+                        options: ['trop', 'très', 'peu', 'bien'],
+                        answer: 'trop',
+                        explanation: '"Trop" means "too" (excessive), whereas "très" means "very".'
+                    },
+                    {
+                        type: 'tiles',
+                        prompt: 'Ask: "Can I try on this jacket?"',
+                        targetSentence: 'Je peux essayer cette veste',
+                        tiles: ['cette', 'Je', 'veste', 'peux', 'essayer'],
+                        explanation: '"Cette" is the demonstrative adjective "this" for feminine nouns like "veste".'
+                    }
+                ]
+            },
+            {
+                id: 'a2-4',
+                level: 'A2',
+                title: 'Health & Doctor Visits',
+                frenchTitle: 'La santé et chez le médecin',
+                icon: 'fa-stethoscope',
+                color: 'from-rose-600 to-slate-800',
+                badgeColor: 'bg-rose-100 text-frenchCoral',
+                xpReward: 85,
+                flashcards: [
+                    { fr: 'J’ai mal à la tête.', phonetic: 'zhay mahl ah lah tet', en: 'I have a headache.', note: 'Use "avoir mal à + body part" to express pain.' },
+                    { fr: 'Je voudrais prendre rendez-vous.', phonetic: 'zhuh voo-dray prahn-druh rahn-day-voo', en: 'I would like to make an appointment.', note: '"Un rendez-vous" = appointment or date.' },
+                    { fr: 'Je me sens fatigué aujourd’hui.', phonetic: 'zhuh muh sahn fah-tee-gay oh-zhoor-dwee', en: 'I feel tired today.', note: '"Se sentir" means to feel (physically/emotionally).' }
+                ],
+                quizzes: [
+                    {
+                        type: 'mc',
+                        prompt: 'How do you say "I have a headache" in French?',
+                        audioText: 'J’ai mal à la tête',
+                        options: ['J’ai mal à la tête', 'Je suis mal tête', 'Ma tête est malade', 'J’ai froid tête'],
+                        answer: 'J’ai mal à la tête',
+                        explanation: '"Avoir mal à" + body part is the idiomatic structure for aches and pains.'
+                    },
+                    {
+                        type: 'fill',
+                        prompt: 'Complete: "I would like to make an appointment."',
+                        sentenceBefore: 'Je voudrais prendre',
+                        sentenceAfter: '.',
+                        options: ['rendez-vous', 'ordonnance', 'médicament', 'congé'],
+                        answer: 'rendez-vous',
+                        explanation: '"Prendre rendez-vous" means to book/make an appointment.'
+                    },
+                    {
+                        type: 'tiles',
+                        prompt: 'Translate: "I feel tired today"',
+                        targetSentence: 'Je me sens fatigué aujourd’hui',
+                        tiles: ['sens', 'aujourd’hui', 'Je', 'fatigué', 'me'],
+                        explanation: '"Je me sens" comes from the reflexive verb "se sentir" (to feel).'
+                    }
+                ]
+            },
+            {
+                id: 'a2-5',
+                level: 'A2',
+                title: 'Travel & Hobbies',
+                frenchTitle: 'Les voyages et les loisirs',
+                icon: 'fa-plane-departure',
+                color: 'from-red-700 to-indigo-950',
+                badgeColor: 'bg-rose-100 text-frenchCoral',
+                xpReward: 95,
+                flashcards: [
+                    { fr: 'J’adore découvrir de nouveaux pays.', phonetic: 'zhah-dor day-koo-vreer duh noo-voh pay-ee', en: 'I love discovering new countries.', note: 'J’adore + infinitive expresses strong passion.' },
+                    { fr: 'Le vol part à quelle heure ?', phonetic: 'luh vohl pahr ah kel uhr', en: 'What time does the flight leave?', note: '"Le vol" = flight; "partir" = to depart.' },
+                    { fr: 'Pendant mes vacances, je lis beaucoup.', phonetic: 'pahn-dahn may vah-kahns, zhuh lee boh-koo', en: 'During my vacation, I read a lot.', note: '"Pendant" means during.' }
+                ],
+                quizzes: [
+                    {
+                        type: 'mc',
+                        prompt: 'What does "Pendant mes vacances" mean?',
+                        audioText: 'Pendant mes vacances',
+                        options: ['During my vacation', 'Before my trip', 'After work', 'Next summer'],
+                        answer: 'During my vacation',
+                        explanation: '"Pendant" is the preposition for "during", and "les vacances" is always plural in French!'
+                    },
+                    {
+                        type: 'fill',
+                        prompt: 'Ask when the flight departs:',
+                        sentenceBefore: 'Le',
+                        sentenceAfter: 'part à quelle heure ?',
+                        options: ['vol', 'billet', 'passeport', 'bagage'],
+                        answer: 'vol',
+                        explanation: '"Le vol" means flight (and also theft, depending on context!).'
+                    },
+                    {
+                        type: 'tiles',
+                        prompt: 'Translate: "I love discovering new countries"',
+                        targetSentence: 'J’adore découvrir de nouveaux pays',
+                        tiles: ['nouveaux', 'J’adore', 'pays', 'découvrir', 'de'],
+                        explanation: 'Before a plural adjective ("nouveaux"), "des" shortens to "de".'
+                    }
+                ]
+            }
+        ];
+
+        /**
+         * ============================================================================
+         * 2. VOCABULARY BANK DATA (A1 & A2)
+         * ============================================================================
+         */
+        const INITIAL_VOCAB = [
+            { id: 'v1', level: 'A1', fr: 'Enchanté(e)', phonetic: 'ahn-shahn-tay', en: 'Nice to meet you', category: 'Greetings' },
+            { id: 'v2', level: 'A1', fr: 'S’il vous plaît', phonetic: 'seel voo play', en: 'Please (formal/plural)', category: 'Politeness' },
+            { id: 'v3', level: 'A1', fr: 'L’addition', phonetic: 'lah-dee-syohn', en: 'The bill / check', category: 'Café' },
+            { id: 'v4', level: 'A1', fr: 'La boulangerie', phonetic: 'lah boo-lahn-zhree', en: 'The bakery', category: 'City' },
+            { id: 'v5', level: 'A1', fr: 'Tout droit', phonetic: 'too drwah', en: 'Straight ahead', category: 'Directions' },
+            { id: 'v6', level: 'A1', fr: 'Se réveiller', phonetic: 'suh ray-vay-yay', en: 'To wake up', category: 'Routine' },
+            { id: 'v7', level: 'A1', fr: 'Aujourd’hui', phonetic: 'oh-zhoor-dwee', en: 'Today', category: 'Time' },
+            { id: 'v8', level: 'A1', fr: 'La gare', phonetic: 'lah gahr', en: 'The train station', category: 'City' },
+            { id: 'v9', level: 'A2', fr: 'Hier soir', phonetic: 'yehr swahr', en: 'Last night / Yesterday evening', category: 'Past' },
+            { id: 'v10', level: 'A2', fr: 'Le week-end prochain', phonetic: 'luh week-end proh-shan', en: 'Next weekend', category: 'Future' },
+            { id: 'v11', level: 'A2', fr: 'Essayer', phonetic: 'ay-say-yay', en: 'To try / To try on', category: 'Shopping' },
+            { id: 'v12', level: 'A2', fr: 'C’est trop cher', phonetic: 'say troh shehr', en: 'It’s too expensive', category: 'Shopping' },
+            { id: 'v13', level: 'A2', fr: 'Un rendez-vous', phonetic: 'uhn rahn-day-voo', en: 'An appointment', category: 'Health' },
+            { id: 'v14', level: 'A2', fr: 'Avoir mal à la tête', phonetic: 'ah-vwahr mahl ah lah tet', en: 'To have a headache', category: 'Health' },
+            { id: 'v15', level: 'A2', fr: 'Découvrir', phonetic: 'day-koo-vreer', en: 'To discover', category: 'Travel' },
+            { id: 'v16', level: 'A2', fr: 'Les loisirs', phonetic: 'lay lwah-zeer', en: 'Hobbies / Leisure activities', category: 'Hobbies' }
+        ];
+
+        /**
+         * ============================================================================
+         * 3. APPLICATION STATE & PERSISTENCE
+         * ============================================================================
+         */
+        let state = {
+            activeTab: 'learn',
+            xp: 180,
+            streak: 4,
+            completedLessons: ['a1-1', 'a1-2'], // Pre-completed 2 lessons so user sees realistic progress
+            masteredVocab: ['v1', 'v2', 'v3'],
+            vocabFilter: 'ALL',
+            vocabSearch: '',
+            speechRate: 1.0,
+            // Active lesson session state
+            currentLesson: null,
+            lessonSteps: [],
+            currentStepIndex: 0,
+            cardFlipped: false,
+            quizAnswered: false,
+            selectedOption: null,
+            selectedTiles: [],
+            sessionXP: 0
+        };
+
+        // Load saved progress from localStorage safely
+        function loadState() {
+            try {
+                const saved = localStorage.getItem('parler_ios_state_v1');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    state.xp = parsed.xp ?? state.xp;
+                    state.streak = parsed.streak ?? state.streak;
+                    state.completedLessons = parsed.completedLessons ?? state.completedLessons;
+                    state.masteredVocab = parsed.masteredVocab ?? state.masteredVocab;
+                }
+            } catch (e) {
+                console.warn('LocalStorage unavailable, running in session memory.');
+            }
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem('parler_ios_state_v1', JSON.stringify({
+                    xp: state.xp,
+                    streak: state.streak,
+                    completedLessons: state.completedLessons,
+                    masteredVocab: state.masteredVocab
+                }));
+            } catch (e) {
+                // Ignore storage errors in sandboxed iframes
+            }
+        }
+
+        /**
+         * ============================================================================
+         * 4. WEB SPEECH API (FRENCH AUDIO ENGINE `fr-FR`)
+         * ============================================================================
+         */
+        let frenchVoice = null;
+
+        function initVoices() {
+            if (!('speechSynthesis' in window)) return;
+            const voices = window.speechSynthesis.getVoices();
+            // Prefer native French voices (fr-FR)
+            frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Thomas') || v.name.includes('Amelie') || v.name.includes('Google') || v.name.includes('Natural')))
+                       || voices.find(v => v.lang.startsWith('fr'))
+                       || null;
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = initVoices;
+            initVoices();
+        }
+
+        function speakFrench(text, rate = 1.0, btnElement = null) {
+            if (!('speechSynthesis' in window)) {
+                showToast('Text-to-speech is not supported in this browser.', 'fa-volume-xmark');
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'fr-FR';
+            utterance.rate = rate;
+            if (frenchVoice) utterance.voice = frenchVoice;
+
+            const islandIndicator = document.getElementById('island-indicator');
+            
+            utterance.onstart = () => {
+                if (islandIndicator) islandIndicator.classList.remove('opacity-0');
+                if (btnElement) btnElement.classList.add('speaking-pulse');
+            };
+
+            utterance.onend = utterance.onerror = () => {
+                if (islandIndicator) islandIndicator.classList.add('opacity-0');
+                if (btnElement) btnElement.classList.remove('speaking-pulse');
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        /**
+         * ============================================================================
+         * 5. UI HELPERS & iOS FEEDBACK
+         * ============================================================================
+         */
+        let toastTimeout = null;
+        function showToast(message, iconClass = 'fa-check') {
+            const toast = document.getElementById('ios-toast');
+            const msgEl = document.getElementById('toast-message');
+            const iconEl = document.getElementById('toast-icon');
+
+            msgEl.textContent = message;
+            iconEl.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+
+            toast.classList.remove('-translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('-translate-y-24', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 2600);
+        }
+
+        function updateClock() {
+            const clock = document.getElementById('ios-clock');
+            if (!clock) return;
+            const now = new Date();
+            const hrs = now.getHours();
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            clock.textContent = `${hrs}:${mins}`;
+        }
+
+        function getCEFRProgress() {
+            const total = CURRICULUM.length;
+            const done = state.completedLessons.length;
+            const pct = Math.min(100, Math.round((done / total) * 100));
+            const a1Done = CURRICULUM.filter(m => m.level === 'A1' && state.completedLessons.includes(m.id)).length;
+            const currentLevel = a1Done >= 5 ? 'A2' : 'A1';
+            return { total, done, pct, currentLevel, a1Done };
+        }
+
+        /**
+         * ============================================================================
+         * 6. TAB NAVIGATION & VIEW RENDERERS
+         * ============================================================================
+         */
+        function switchTab(tabName) {
+            state.activeTab = tabName;
+
+            // Update active tab styling
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                const isTarget = btn.dataset.tab === tabName;
+                if (isTarget) {
+                    btn.classList.remove('text-slate-400', 'hover:text-slate-600');
+                    btn.classList.add('text-frenchNavy');
+                    btn.querySelector('span').classList.replace('font-semibold', 'font-bold');
+                } else {
+                    btn.classList.add('text-slate-400', 'hover:text-slate-600');
+                    btn.classList.remove('text-frenchNavy');
+                    btn.querySelector('span').classList.replace('font-bold', 'font-semibold');
+                }
+            });
+
+            renderViewport();
+        }
+
+        function renderViewport() {
+            const viewport = document.getElementById('app-viewport');
+            viewport.scrollTop = 0;
+
+            if (state.activeTab === 'learn') {
+                viewport.innerHTML = renderLearnTab();
+            } else if (state.activeTab === 'practice') {
+                viewport.innerHTML = renderPracticeTab();
+            } else if (state.activeTab === 'vocab') {
+                viewport.innerHTML = renderVocabTab();
+            } else if (state.activeTab === 'profile') {
+                viewport.innerHTML = renderProfileTab();
+            }
+        }
+
+        // -------------------- TAB 1: LEARN PATH (A1 -> A2) --------------------
+        function renderLearnTab() {
+            const { pct, currentLevel, done, total } = getCEFRProgress();
+            const a1Modules = CURRICULUM.filter(m => m.level === 'A1');
+            const a2Modules = CURRICULUM.filter(m => m.level === 'A2');
+
+            return `
+                <div class="p-5 pb-10 space-y-6 animate-pop">
+                    <!-- App Brand Header & Daily Stats -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-frenchNavy text-white text-xs font-extrabold">P</span>
+                                <h1 class="font-display text-2xl font-extrabold tracking-tight text-slate-900">Parler</h1>
+                            </div>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">Bonjour ! Ready for your French goal?</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <!-- Streak Pill -->
+                            <div class="bg-white px-2.5 py-1.5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-1.5">
+                                <i class="fa-solid fa-fire text-frenchCoral text-sm"></i>
+                                <span class="text-xs font-extrabold text-slate-800">${state.streak}</span>
+                            </div>
+                            <!-- XP Pill -->
+                            <div class="bg-white px-2.5 py-1.5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-1.5">
+                                <i class="fa-solid fa-star text-amber-500 text-sm"></i>
+                                <span class="text-xs font-extrabold text-slate-800">${state.xp}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CEFR A1 -> A2 Progress Card -->
+                    <div class="bg-gradient-to-br from-frenchNavy via-blue-900 to-indigo-950 rounded-3xl p-5 text-white shadow-lg shadow-blue-900/15 relative overflow-hidden">
+                        <div class="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10 blur-xl"></div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[11px] font-bold uppercase tracking-wider bg-white/15 px-2.5 py-1 rounded-full">
+                                CEFR Track • Level ${currentLevel}
+                            </span>
+                            <span class="text-xs font-bold text-blue-200">${done}/${total} Modules</span>
+                        </div>
+                        <div class="flex items-end justify-between mb-2">
+                            <h2 class="font-display text-lg font-bold">A1 Foundation <i class="fa-solid fa-arrow-right text-xs mx-1 text-rose-400"></i> A2 Elementary</h2>
+                            <span class="text-sm font-extrabold">${pct}%</span>
+                        </div>
+                        <!-- Progress Track -->
+                        <div class="w-full h-2.5 bg-white/20 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-sky-300 via-white to-rose-400 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-blue-200 font-semibold mt-2">
+                            <span>A1 Beginner</span>
+                            <span>A1+</span>
+                            <span>A2 Conversational</span>
+                        </div>
+                    </div>
+
+                    <!-- A1 SECTION -->
+                    <div>
+                        <div class="flex items-center justify-between mb-3 px-1">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded-md bg-frenchNavy text-white text-[11px] font-extrabold">A1</span>
+                                <h3 class="font-display font-bold text-slate-900 text-base">Beginner Foundations</h3>
+                            </div>
+                            <span class="text-[11px] font-semibold text-slate-400">5 Modules</span>
+                        </div>
+                        <div class="space-y-3">
+                            ${a1Modules.map((mod, idx) => renderModuleCard(mod, idx)).join('')}
+                        </div>
+                    </div>
+
+                    <!-- A2 SECTION -->
+                    <div class="pt-2">
+                        <div class="flex items-center justify-between mb-3 px-1">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded-md bg-frenchCoral text-white text-[11px] font-extrabold">A2</span>
+                                <h3 class="font-display font-bold text-slate-900 text-base">Elementary Fluency</h3>
+                            </div>
+                            <span class="text-[11px] font-semibold text-slate-400">5 Modules</span>
+                        </div>
+                        <div class="space-y-3">
+                            ${a2Modules.map((mod, idx) => renderModuleCard(mod, idx + 5)).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderModuleCard(mod, index) {
+            const isCompleted = state.completedLessons.includes(mod.id);
+            const isA2 = mod.level === 'A2';
+
+            return `
+                <button onclick="startLesson('${mod.id}')" class="w-full text-left bg-white hover:bg-slate-50/90 active:scale-[0.98] transition-all p-4 rounded-3xl shadow-sm border ${isCompleted ? 'border-emerald-200/80' : 'border-slate-100'} flex items-center gap-3.5 group">
+                    <!-- Icon Avatar -->
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br ${mod.color} text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                        <i class="fa-solid ${mod.icon} text-lg"></i>
+                    </div>
+                    
+                    <!-- Module Info -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5 mb-0.5">
+                            <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded ${mod.badgeColor}">${mod.level}</span>
+                            <span class="text-[11px] font-medium text-slate-400 truncate">${mod.frenchTitle}</span>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-[15px] leading-tight truncate">${mod.title}</h4>
+                        <div class="flex items-center gap-3 mt-1.5 text-[11px] font-semibold text-slate-500">
+                            <span><i class="fa-solid fa-layer-group text-slate-400 mr-1"></i>6 Steps</span>
+                            <span class="${isA2 ? 'text-frenchCoral' : 'text-frenchNavy'}">+${mod.xpReward} XP</span>
+                        </div>
+                    </div>
+
+                    <!-- Status Badge -->
+                    <div class="shrink-0">
+                        ${isCompleted 
+                            ? `<div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-check text-sm"></i></div>`
+                            : `<div class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 group-hover:bg-frenchNavy group-hover:text-white flex items-center justify-center transition-colors"><i class="fa-solid fa-play text-xs ml-0.5"></i></div>`
+                        }
+                    </div>
+                </button>
+            `;
+        }
+
+        // -------------------- TAB 2: PRACTICE HUB --------------------
+        function renderPracticeTab() {
+            return `
+                <div class="p-5 pb-10 space-y-5 animate-pop">
+                    <div>
+                        <h1 class="font-display text-2xl font-extrabold text-slate-900">Daily Practice</h1>
+                        <p class="text-xs text-slate-500 font-medium mt-0.5">Sharpen your A1–A2 grammar, listening & recall</p>
+                    </div>
+
+                    <!-- Quick Smart Mix Card -->
+                    <div class="bg-gradient-to-br from-frenchCoral to-rose-800 rounded-3xl p-5 text-white shadow-lg shadow-rose-900/15">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider bg-white/20 px-2.5 py-1 rounded-full">Smart Workout</span>
+                            <i class="fa-solid fa-bolt text-amber-300 text-lg"></i>
+                        </div>
+                        <h2 class="font-display text-xl font-bold mb-1">A1–A2 Quick Mix</h2>
+                        <p class="text-xs text-rose-100 mb-4 leading-relaxed">A 6-question rapid session blending flashcards, grammar fill-ins, and French audio comprehension.</p>
+                        <button onclick="startSmartPractice()" class="w-full py-3 bg-white text-frenchCoral font-bold text-sm rounded-2xl shadow-sm active:scale-95 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-play"></i> Start 3-Minute Drill
+                        </button>
+                    </div>
+
+                    <!-- Targeted Skill Drills -->
+                    <div class="space-y-3">
+                        <h3 class="font-display font-bold text-sm text-slate-800 px-1">Focused Skill Drills</h3>
+
+                        <button onclick="startLesson('a2-1')" class="w-full bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-3.5 text-left active:scale-[0.98] transition">
+                            <div class="w-11 h-11 rounded-2xl bg-rose-100 text-frenchCoral flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-bold text-sm text-slate-900">Passé Composé Trainer</h4>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-frenchCoral">A2</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Master Avoir vs. Être past participles</p>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                        </button>
+
+                        <button onclick="startLesson('a2-2')" class="w-full bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-3.5 text-left active:scale-[0.98] transition">
+                            <div class="w-11 h-11 rounded-2xl bg-indigo-100 text-frenchNavy flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-calendar-check text-lg"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-bold text-sm text-slate-900">Futur Proche Builder</h4>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-frenchCoral">A2</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Express upcoming plans with "Aller + Infinitive"</p>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                        </button>
+
+                        <button onclick="startLesson('a1-3')" class="w-full bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-3.5 text-left active:scale-[0.98] transition">
+                            <div class="w-11 h-11 rounded-2xl bg-blue-100 text-frenchNavy flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-mug-hot text-lg"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-bold text-sm text-slate-900">Parisian Café Survival</h4>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-frenchNavy">A1</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Polite ordering & asking for the bill</p>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Pronunciation Tip Card -->
+                    <div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-frenchNavy flex items-center gap-1.5">
+                                <i class="fa-solid fa-ear-listen"></i> Phrase of the Day
+                            </span>
+                            <div class="flex gap-1.5">
+                                <button onclick="speakFrench('C’est la vie, il faut profiter du moment.', 1.0, this)" class="px-2.5 py-1 rounded-full bg-blue-50 text-frenchNavy text-[11px] font-bold active:scale-95 transition">
+                                    <i class="fa-solid fa-volume-high mr-1"></i>1.0x
+                                </button>
+                                <button onclick="speakFrench('C’est la vie, il faut profiter du moment.', 0.65, this)" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-bold active:scale-95 transition">
+                                    <i class="fa-solid fa-snail mr-1"></i>Slow
+                                </button>
+                            </div>
+                        </div>
+                        <p class="font-display font-bold text-slate-900 text-base">"C’est la vie, il faut profiter du moment."</p>
+                        <p class="text-xs text-slate-400 italic mt-0.5">/say lah vee, eel foh proh-fee-tay dew moh-mahn/</p>
+                        <p class="text-xs text-slate-600 font-medium mt-1.5">That’s life, you have to enjoy the moment.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // -------------------- TAB 3: VOCABULARY BANK --------------------
+        function renderVocabTab() {
+            const filtered = INITIAL_VOCAB.filter(item => {
+                const matchesFilter = state.vocabFilter === 'ALL' 
+                    || (state.vocabFilter === 'MASTERED' && state.masteredVocab.includes(item.id))
+                    || item.level === state.vocabFilter;
+                const q = state.vocabSearch.toLowerCase().trim();
+                const matchesSearch = !q || item.fr.toLowerCase().includes(q) || item.en.toLowerCase().includes(q) || item.category.toLowerCase().includes(q);
+                return matchesFilter && matchesSearch;
+            });
+
+            const masteredCount = state.masteredVocab.length;
+
+            return `
+                <div class="p-5 pb-10 space-y-4 animate-pop">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="font-display text-2xl font-extrabold text-slate-900">Vocab Bank</h1>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">${masteredCount} of ${INITIAL_VOCAB.length} words mastered</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-2xl bg-blue-50 text-frenchNavy flex items-center justify-center font-extrabold text-xs">
+                            ${Math.round((masteredCount / INITIAL_VOCAB.length) * 100)}%
+                        </div>
+                    </div>
+
+                    <!-- iOS Search Bar -->
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input 
+                            type="text" 
+                            value="${state.vocabSearch}"
+                            oninput="handleVocabSearch(this.value)"
+                            placeholder="Search French, English, or topic..." 
+                            class="w-full bg-white pl-9 pr-4 py-2.5 rounded-2xl text-xs font-medium text-slate-800 placeholder:text-slate-400 border border-slate-200/80 focus:outline-none focus:border-frenchNavy transition"
+                        >
+                    </div>
+
+                    <!-- Segmented Filter Pills (ALL / A1 / A2 / Mastered) -->
+                    <div class="grid grid-cols-4 gap-1.5 bg-slate-200/70 p-1 rounded-2xl">
+                        ${['ALL', 'A1', 'A2', 'MASTERED'].map(tab => {
+                            const active = state.vocabFilter === tab;
+                            const label = tab === 'MASTERED' ? 'Mastered' : tab;
+                            return `
+                                <button onclick="setVocabFilter('${tab}')" class="py-1.5 rounded-xl text-[11px] font-bold transition ${active ? 'bg-white text-frenchNavy shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+                                    ${label}
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+
+                    <!-- Vocabulary List -->
+                    <div class="space-y-2.5">
+                        ${filtered.length === 0 ? `
+                            <div class="text-center py-10 bg-white rounded-3xl border border-slate-100">
+                                <i class="fa-solid fa-book-open text-2xl text-slate-300 mb-2"></i>
+                                <p class="text-xs font-semibold text-slate-500">No matching vocabulary found.</p>
+                            </div>
+                        ` : filtered.map(item => {
+                            const isMastered = state.masteredVocab.includes(item.id);
+                            return `
+                                <div class="bg-white p-3.5 rounded-2xl border ${isMastered ? 'border-emerald-200 bg-emerald-50/20' : 'border-slate-100'} shadow-sm flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <!-- Audio Play Button -->
+                                        <button onclick="speakFrench('${item.fr.replace(/'/g, "\\'")}', 1.0, this)" aria-label="Pronounce ${item.fr}" class="w-10 h-10 rounded-xl bg-blue-50 hover:bg-blue-100 active:scale-90 text-frenchNavy flex items-center justify-center shrink-0 transition">
+                                            <i class="fa-solid fa-volume-high text-sm"></i>
+                                        </button>
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded ${item.level === 'A1' ? 'bg-blue-100 text-frenchNavy' : 'bg-rose-100 text-frenchCoral'}">${item.level}</span>
+                                                <span class="text-[10px] font-medium text-slate-400">${item.category}</span>
+                                            </div>
+                                            <h4 class="font-bold text-slate-900 text-sm truncate mt-0.5">${item.fr}</h4>
+                                            <p class="text-[11px] text-slate-400 italic truncate">/${item.phonetic}/</p>
+                                            <p class="text-xs text-slate-600 font-medium truncate mt-0.5">${item.en}</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Mastered Toggle Button -->
+                                    <button onclick="toggleMastered('${item.id}')" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold shrink-0 transition active:scale-95 flex items-center gap-1 ${isMastered ? 'bg-emerald-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
+                                        <i class="fa-solid ${isMastered ? 'fa-check-circle' : 'fa-circle-check'}"></i>
+                                        <span>${isMastered ? 'Mastered' : 'Mark'}</span>
+                                    </button>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleVocabSearch(val) {
+            state.vocabSearch = val;
+            renderViewport();
+            // Restore focus & cursor position after re-render
+            const input = document.querySelector('#app-viewport input');
+            if (input) {
+                input.focus();
+                input.setSelectionRange(val.length, val.length);
+            }
+        }
+
+        function setVocabFilter(filter) {
+            state.vocabFilter = filter;
+            renderViewport();
+        }
+
+        function toggleMastered(id) {
+            const idx = state.masteredVocab.indexOf(id);
+            if (idx > -1) {
+                state.masteredVocab.splice(idx, 1);
+            } else {
+                state.masteredVocab.push(id);
+                state.xp += 5;
+                showToast('+5 XP! Word marked as mastered.', 'fa-star');
+            }
+            saveState();
+            renderViewport();
+        }
+
+        // -------------------- TAB 4: PROFILE & ACHIEVEMENTS --------------------
+        function renderProfileTab() {
+            const { pct, currentLevel, done, total } = getCEFRProgress();
+
+            return `
+                <div class="p-5 pb-10 space-y-5 animate-pop">
+                    <!-- Profile Card -->
+                    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm text-center relative overflow-hidden">
+                        <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-frenchNavy via-blue-600 to-frenchCoral p-1 mx-auto mb-3 shadow-md">
+                            <div class="w-full h-full rounded-full bg-white flex items-center justify-center text-2xl font-extrabold text-frenchNavy">
+                                <i class="fa-solid fa-user-graduate"></i>
+                            </div>
+                        </div>
+                        <h2 class="font-display text-xl font-extrabold text-slate-900">Apprenant Français</h2>
+                        <p class="text-xs text-slate-500 font-medium mt-0.5">Goal: Conversational French (CEFR A2)</p>
+                        <div class="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full bg-blue-50 text-frenchNavy text-xs font-bold">
+                            <i class="fa-solid fa-award"></i> Current Standing: CEFR ${currentLevel}
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-3 gap-2.5">
+                        <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm text-center">
+                            <i class="fa-solid fa-fire text-frenchCoral text-lg mb-1"></i>
+                            <div class="font-display font-extrabold text-lg text-slate-900">${state.streak}</div>
+                            <div class="text-[10px] font-semibold text-slate-400 uppercase">Day Streak</div>
+                        </div>
+                        <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm text-center">
+                            <i class="fa-solid fa-star text-amber-500 text-lg mb-1"></i>
+                            <div class="font-display font-extrabold text-lg text-slate-900">${state.xp}</div>
+                            <div class="text-[10px] font-semibold text-slate-400 uppercase">Total XP</div>
+                        </div>
+                        <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm text-center">
+                            <i class="fa-solid fa-check-double text-emerald-500 text-lg mb-1"></i>
+                            <div class="font-display font-extrabold text-lg text-slate-900">${done}/${total}</div>
+                            <div class="text-[10px] font-semibold text-slate-400 uppercase">Modules</div>
+                        </div>
+                    </div>
+
+                    <!-- CEFR Milestone Breakdown -->
+                    <div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm space-y-3">
+                        <h3 class="font-display font-bold text-sm text-slate-900">CEFR Roadmap Progress</h3>
+                        <div>
+                            <div class="flex justify-between text-xs font-bold mb-1">
+                                <span class="text-frenchNavy">Overall A1 → A2 Completion</span>
+                                <span>${pct}%</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-frenchNavy rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">
+                            Completing all 10 modules equips you to handle everyday conversations, narrate past events in <em>passé composé</em>, and discuss future plans in <em>futur proche</em>.
+                        </p>
+                    </div>
+
+                    <!-- Reset Progress Action -->
+                    <button onclick="resetProgress()" class="w-full py-3 rounded-2xl bg-slate-200/70 hover:bg-rose-50 hover:text-frenchCoral text-slate-600 text-xs font-bold transition">
+                        <i class="fa-solid fa-rotate-left mr-1.5"></i> Reset Demo Progress
+                    </button>
+                </div>
+            `;
+        }
+
+        function resetProgress() {
+            state.xp = 0;
+            state.streak = 1;
+            state.completedLessons = [];
+            state.masteredVocab = [];
+            saveState();
+            showToast('Progress reset to A1 start.', 'fa-rotate-left');
+            renderViewport();
+        }
+
+        /**
+         * ============================================================================
+         * 7. INTERACTIVE LESSON PLAYER (FLASHCARDS + 3 QUIZ MODES)
+         * ============================================================================
+         */
+        function startLesson(moduleId) {
+            const mod = CURRICULUM.find(m => m.id === moduleId);
+            if (!mod) return;
+
+            // Combine 3 flashcards + 3 interactive quizzes into a 6-step learning flow
+            const steps = [
+                ...mod.flashcards.map(fc => ({ kind: 'flashcard', data: fc })),
+                ...mod.quizzes.map(qz => ({ kind: 'quiz', data: qz }))
+            ];
+
+            state.currentLesson = mod;
+            state.lessonSteps = steps;
+            state.currentStepIndex = 0;
+            state.cardFlipped = false;
+            state.quizAnswered = false;
+            state.selectedOption = null;
+            state.selectedTiles = [];
+            state.sessionXP = 0;
+
+            openLessonOverlay();
+            renderLessonStep();
+        }
+
+        function startSmartPractice() {
+            // Pull 2 random flashcards & 4 random quizzes across unlocked/all modules
+            const allFlashcards = CURRICULUM.flatMap(m => m.flashcards);
+            const allQuizzes = CURRICULUM.flatMap(m => m.quizzes);
+
+            const pickRandom = (arr, count) => [...arr].sort(() => 0.5 - Math.random()).slice(0, count);
+
+            const steps = [
+                ...pickRandom(allFlashcards, 2).map(fc => ({ kind: 'flashcard', data: fc })),
+                ...pickRandom(allQuizzes, 4).map(qz => ({ kind: 'quiz', data: qz }))
+            ];
+
+            state.currentLesson = {
+                id: 'smart-drill',
+                level: 'A1–A2',
+                title: 'Smart Mixed Drill',
+                xpReward: 45
+            };
+            state.lessonSteps = steps;
+            state.currentStepIndex = 0;
+            state.cardFlipped = false;
+            state.quizAnswered = false;
+            state.selectedOption = null;
+            state.selectedTiles = [];
+            state.sessionXP = 0;
+
+            openLessonOverlay();
+            renderLessonStep();
+        }
+
+        function openLessonOverlay() {
+            const overlay = document.getElementById('lesson-overlay');
+            overlay.classList.remove('hidden');
+            // Trigger smooth slide-up transition
+            requestAnimationFrame(() => {
+                overlay.classList.remove('translate-y-full');
+            });
+        }
+
+        function closeLesson() {
+            window.speechSynthesis && window.speechSynthesis.cancel();
+            const overlay = document.getElementById('lesson-overlay');
+            overlay.classList.add('translate-y-full');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                renderViewport();
+            }, 300);
+        }
+
+        function renderLessonStep() {
+            const stage = document.getElementById('lesson-stage');
+            const progressBar = document.getElementById('lesson-progress-bar');
+            const counter = document.getElementById('lesson-step-counter');
+
+            const total = state.lessonSteps.length;
+            const idx = state.currentStepIndex;
+
+            // Check if lesson is finished
+            if (idx >= total) {
+                progressBar.style.width = '100%';
+                counter.textContent = 'Done';
+                renderLessonComplete(stage);
+                return;
+            }
+
+            const pct = Math.round(((idx + 1) / total) * 100);
+            progressBar.style.width = `${pct}%`;
+            counter.textContent = `${idx + 1}/${total}`;
+
+            const step = state.lessonSteps[idx];
+            if (step.kind === 'flashcard') {
+                renderFlashcardStep(stage, step.data);
+            } else {
+                renderQuizStep(stage, step.data);
+            }
+        }
+
+        // -------------------- FLASHCARD STEP RENDERER --------------------
+        function renderFlashcardStep(stage, card) {
+            const escapedFr = card.fr.replace(/'/g, "\\'");
+
+            stage.innerHTML = `
+                <div class="flex-1 flex flex-col justify-center animate-pop">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-frenchNavy bg-blue-50 px-3 py-1 rounded-full">
+                            <i class="fa-solid fa-clone mr-1"></i> Vocabulary Flashcard
+                        </span>
+                        <span class="text-[11px] font-semibold text-slate-400">Tap card to flip</span>
+                    </div>
+
+                    <!-- Interactive 3D Flashcard -->
+                    <div onclick="flipFlashcard()" class="perspective-1000 w-full h-[310px] cursor-pointer select-none">
+                        <div id="flashcard-inner" class="relative w-full h-full transition-transform duration-500 transform-style-3d ${state.cardFlipped ? 'rotate-y-180' : ''}">
+                            
+                            <!-- FRONT FACE (FRENCH + AUDIO) -->
+                            <div class="absolute inset-0 backface-hidden bg-gradient-to-br from-white to-slate-50 rounded-3xl border-2 border-slate-100 shadow-xl p-6 flex flex-col items-center justify-between text-center">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Français</span>
+                                
+                                <div class="space-y-2 my-auto">
+                                    <h3 class="font-display text-2xl font-extrabold text-slate-900 leading-snug">${card.fr}</h3>
+                                    <p class="text-xs font-medium text-frenchCoral italic">/${card.phonetic}/</p>
+                                </div>
+
+                                <!-- Audio Playback Controls (Normal & Slow) -->
+                                <div class="flex items-center gap-2.5" onclick="event.stopPropagation()">
+                                    <button onclick="speakFrench('${escapedFr}', 1.0, this)" class="px-4 py-2.5 rounded-2xl bg-frenchNavy hover:bg-blue-800 active:scale-95 text-white text-xs font-bold shadow-md flex items-center gap-2 transition">
+                                        <i class="fa-solid fa-volume-high"></i> Listen
+                                    </button>
+                                    <button onclick="speakFrench('${escapedFr}', 0.65, this)" class="px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition" title="Slow pronunciation">
+                                        <i class="fa-solid fa-gauge-simple"></i> Slow
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- BACK FACE (ENGLISH + GRAMMAR NOTE) -->
+                            <div class="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-br from-frenchNavy to-indigo-950 text-white rounded-3xl shadow-xl p-6 flex flex-col items-center justify-between text-center">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-blue-200">English Meaning</span>
+                                
+                                <div class="space-y-3 my-auto">
+                                    <h3 class="font-display text-2xl font-extrabold leading-snug">${card.en}</h3>
+                                    <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3 text-xs text-blue-100 leading-relaxed">
+                                        <i class="fa-solid fa-lightbulb text-amber-300 mr-1"></i> ${card.note}
+                                    </div>
+                                </div>
+
+                                <span class="text-[11px] font-semibold text-blue-200"><i class="fa-solid fa-rotate mr-1"></i> Tap to see French</span>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Continue Button -->
+                <div class="pt-4 shrink-0">
+                    <button onclick="nextLessonStep()" class="w-full py-3.5 rounded-2xl bg-frenchNavy hover:bg-blue-800 active:scale-[0.98] text-white font-bold text-sm shadow-lg shadow-blue-900/20 transition flex items-center justify-center gap-2">
+                        Continue <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            `;
+
+            // Auto-speak French phrase gently on first view
+            setTimeout(() => speakFrench(card.fr, 1.0), 250);
+        }
+
+        function flipFlashcard() {
+            state.cardFlipped = !state.cardFlipped;
+            const inner = document.getElementById('flashcard-inner');
+            if (inner) {
+                inner.classList.toggle('rotate-y-180', state.cardFlipped);
+            }
+        }
+
+        // -------------------- QUIZ STEP RENDERER (MC / FILL / TILES) --------------------
+        function renderQuizStep(stage, quiz) {
+            let interactiveHtml = '';
+
+            if (quiz.type === 'mc') {
+                interactiveHtml = `
+                    ${quiz.audioText ? `
+                        <button onclick="speakFrench('${quiz.audioText.replace(/'/g, "\\'")}', 1.0, this)" class="mb-4 inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-blue-50 text-frenchNavy text-xs font-bold active:scale-95 transition">
+                            <i class="fa-solid fa-volume-high"></i> Play Audio Hint
+                        </button>
+                    ` : ''}
+                    <div class="space-y-2.5">
+                        ${quiz.options.map(opt => {
+                            let btnStyle = 'bg-white border-slate-200 text-slate-800 hover:border-frenchNavy';
+                            if (state.quizAnswered) {
+                                if (opt === quiz.answer) {
+                                    btnStyle = 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold';
+                                } else if (opt === state.selectedOption) {
+                                    btnStyle = 'bg-rose-50 border-frenchCoral text-frenchCoral animate-shake';
+                                } else {
+                                    btnStyle = 'bg-slate-50 border-slate-100 text-slate-400 opacity-60';
+                                }
+                            } else if (state.selectedOption === opt) {
+                                btnStyle = 'bg-blue-50 border-frenchNavy text-frenchNavy font-bold';
+                            }
+
+                            return `
+                                <button ${state.quizAnswered ? 'disabled' : ''} onclick="selectQuizOption('${opt.replace(/'/g, "\\'")}')" class="w-full p-3.5 rounded-2xl border-2 text-left text-sm font-semibold transition-all flex items-center justify-between ${btnStyle}">
+                                    <span>${opt}</span>
+                                    ${state.quizAnswered && opt === quiz.answer ? '<i class="fa-solid fa-circle-check text-emerald-600"></i>' : ''}
+                                    ${state.quizAnswered && opt === state.selectedOption && opt !== quiz.answer ? '<i class="fa-solid fa-circle-xmark text-frenchCoral"></i>' : ''}
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } else if (quiz.type === 'fill') {
+                const chosenWord = state.selectedOption || '______';
+                interactiveHtml = `
+                    <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 mb-5 text-center">
+                        <p class="font-display text-lg font-bold text-slate-900">
+                            ${quiz.sentenceBefore}
+                            <span class="inline-block px-2.5 py-0.5 mx-1 rounded-lg border-b-2 ${state.selectedOption ? 'bg-blue-100 text-frenchNavy border-frenchNavy' : 'bg-white text-slate-400 border-slate-300'}">${chosenWord}</span>
+                            ${quiz.sentenceAfter}
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        ${quiz.options.map(opt => {
+                            let style = 'bg-white border-slate-200 text-slate-800 hover:border-frenchNavy';
+                            if (state.quizAnswered) {
+                                if (opt === quiz.answer) style = 'bg-emerald-50 border-emerald-500 text-emerald-800';
+                                else if (opt === state.selectedOption) style = 'bg-rose-50 border-frenchCoral text-frenchCoral';
+                                else style = 'opacity-50 border-slate-100';
+                            } else if (state.selectedOption === opt) {
+                                style = 'bg-blue-50 border-frenchNavy text-frenchNavy';
+                            }
+                            return `
+                                <button ${state.quizAnswered ? 'disabled' : ''} onclick="selectQuizOption('${opt.replace(/'/g, "\\'")}')" class="p-3 rounded-2xl border-2 text-sm font-bold transition ${style}">
+                                    ${opt}
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } else if (quiz.type === 'tiles') {
+                interactiveHtml = `
+                    <!-- Selected Sentence Construction Area -->
+                    <div class="min-h-[76px] bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-3 mb-5 flex flex-wrap gap-2 items-center">
+                        ${state.selectedTiles.length === 0 
+                            ? `<span class="text-xs text-slate-400 font-medium mx-auto">Tap words below to build the French sentence</span>`
+                            : state.selectedTiles.map((word, i) => `
+                                <button ${state.quizAnswered ? 'disabled' : ''} onclick="removeTile(${i})" class="px-3 py-1.5 rounded-xl bg-frenchNavy text-white text-xs font-bold shadow-sm active:scale-95 transition">
+                                    ${word}
+                                </button>
+                            `).join('')
+                        }
+                    </div>
+
+                    <!-- Available Word Bank Tiles -->
+                    <div class="flex flex-wrap gap-2 justify-center">
+                        ${quiz.tiles.map((word, i) => {
+                            const isUsed = state.selectedTiles.includes(word);
+                            return `
+                                <button ${state.quizAnswered || isUsed ? 'disabled' : ''} onclick="addTile('${word.replace(/'/g, "\\'")}')" class="px-3.5 py-2 rounded-xl border-2 text-xs font-bold transition ${isUsed ? 'bg-slate-100 border-slate-100 text-slate-300' : 'bg-white border-slate-200 text-slate-800 hover:border-frenchNavy active:scale-95 shadow-sm'}">
+                                    ${word}
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            // Feedback Banner when answered
+            let isCorrect = false;
+            if (state.quizAnswered) {
+                if (quiz.type === 'tiles') {
+                    isCorrect = state.selectedTiles.join(' ') === quiz.targetSentence;
+                } else {
+                    isCorrect = state.selectedOption === quiz.answer;
+                }
+            }
+
+            const canSubmit = quiz.type === 'tiles' ? state.selectedTiles.length > 0 : Boolean(state.selectedOption);
+
+            stage.innerHTML = `
+                <div class="flex-1 flex flex-col justify-between animate-pop">
+                    <div>
+                        <span class="inline-block text-[11px] font-extrabold uppercase tracking-wider text-frenchCoral bg-rose-50 px-3 py-1 rounded-full mb-3">
+                            <i class="fa-solid fa-pen-to-square mr-1"></i> ${quiz.type === 'tiles' ? 'Sentence Builder' : quiz.type === 'fill' ? 'Grammar Fill-in' : 'Quick Check'}
+                        </span>
+                        <h3 class="font-display text-lg font-extrabold text-slate-900 leading-snug mb-4">${quiz.prompt}</h3>
+                        ${interactiveHtml}
+                    </div>
+
+                    <div class="pt-4 space-y-3">
+                        ${state.quizAnswered ? `
+                            <div class="p-3.5 rounded-2xl ${isCorrect ? 'bg-emerald-50 border border-emerald-200 text-emerald-900' : 'bg-rose-50 border border-rose-200 text-rose-900'} animate-pop">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-extrabold flex items-center gap-1.5">
+                                        <i class="fa-solid ${isCorrect ? 'fa-circle-check text-emerald-600' : 'fa-circle-exclamation text-frenchCoral'}"></i>
+                                        ${isCorrect ? 'Très bien ! Correct!' : 'Almost! Correct answer:'}
+                                    </span>
+                                    <button onclick="speakFrench('${(quiz.targetSentence || quiz.answer).replace(/'/g, "\\'")}', 1.0, this)" class="text-xs font-bold underline">
+                                        <i class="fa-solid fa-volume-high"></i> Listen
+                                    </button>
+                                </div>
+                                ${!isCorrect ? `<p class="text-xs font-bold mb-1">${quiz.targetSentence || quiz.answer}</p>` : ''}
+                                <p class="text-[11px] leading-relaxed opacity-90">${quiz.explanation}</p>
+                            </div>
+                            <button onclick="nextLessonStep()" class="w-full py-3.5 rounded-2xl ${isCorrect ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-frenchNavy hover:bg-blue-800'} text-white font-bold text-sm shadow-lg transition flex items-center justify-center gap-2">
+                                Next Step <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        ` : `
+                            <button ${!canSubmit ? 'disabled' : ''} onclick="checkQuizAnswer()" class="w-full py-3.5 rounded-2xl font-bold text-sm transition ${canSubmit ? 'bg-frenchNavy text-white shadow-lg shadow-blue-900/20 active:scale-[0.98]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
+                                Check Answer
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectQuizOption(opt) {
+            if (state.quizAnswered) return;
+            state.selectedOption = opt;
+            renderLessonStep();
+        }
+
+        function addTile(word) {
+            if (state.quizAnswered) return;
+            state.selectedTiles.push(word);
+            renderLessonStep();
+        }
+
+        function removeTile(index) {
+            if (state.quizAnswered) return;
+            state.selectedTiles.splice(index, 1);
+            renderLessonStep();
+        }
+
+        function checkQuizAnswer() {
+            const step = state.lessonSteps[state.currentStepIndex];
+            if (!step || step.kind !== 'quiz') return;
+
+            state.quizAnswered = true;
+            const quiz = step.data;
+            const isCorrect = quiz.type === 'tiles'
+                ? state.selectedTiles.join(' ') === quiz.targetSentence
+                : state.selectedOption === quiz.answer;
+
+            if (isCorrect) {
+                state.sessionXP += 10;
+                speakFrench(quiz.targetSentence || quiz.answer, 1.0);
+            }
+            renderLessonStep();
+        }
+
+        function nextLessonStep() {
+            state.currentStepIndex++;
+            state.cardFlipped = false;
+            state.quizAnswered = false;
+            state.selectedOption = null;
+            state.selectedTiles = [];
+            renderLessonStep();
+        }
+
+        // -------------------- LESSON COMPLETION CELEBRATION --------------------
+        function renderLessonComplete(stage) {
+            const mod = state.currentLesson;
+            const totalEarned = mod.xpReward + state.sessionXP;
+
+            // Update persistent state
+            state.xp += totalEarned;
+            if (mod.id !== 'smart-drill' && !state.completedLessons.includes(mod.id)) {
+                state.completedLessons.push(mod.id);
+            }
+            saveState();
+
+            stage.innerHTML = `
+                <div class="flex-1 flex flex-col items-center justify-center text-center px-3 animate-pop">
+                    <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 text-white flex items-center justify-center text-4xl shadow-xl shadow-amber-500/25 mb-5">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <span class="text-xs font-extrabold uppercase tracking-widest text-frenchCoral mb-1">Félicitations !</span>
+                    <h2 class="font-display text-2xl font-extrabold text-slate-900 mb-2">Lesson Complete</h2>
+                    <p class="text-xs text-slate-500 max-w-[260px] leading-relaxed mb-6">
+                        You completed <strong class="text-slate-800">${mod.title}</strong> (${mod.level}) and strengthened your French skills!
+                    </p>
+
+                    <div class="w-full grid grid-cols-2 gap-3 mb-6">
+                        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-3.5">
+                            <div class="text-[10px] font-bold text-frenchNavy uppercase">XP Earned</div>
+                            <div class="font-display text-xl font-extrabold text-frenchNavy mt-0.5">+${totalEarned} XP</div>
+                        </div>
+                        <div class="bg-rose-50 border border-rose-100 rounded-2xl p-3.5">
+                            <div class="text-[10px] font-bold text-frenchCoral uppercase">Daily Streak</div>
+                            <div class="font-display text-xl font-extrabold text-frenchCoral mt-0.5">${state.streak} Days 🔥</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="closeLesson()" class="w-full py-3.5 rounded-2xl bg-frenchNavy hover:bg-blue-800 active:scale-[0.98] text-white font-bold text-sm shadow-lg transition">
+                    Back to Learning Path
+                </button>
+            `;
+        }
+
+        /**
+         * ============================================================================
+         * 8. BOOTSTRAP APPLICATION
+         * ============================================================================
+         */
+        window.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            updateClock();
+            setInterval(updateClock, 30000);
+            renderViewport();
+        });
+    </script>
+</body>
+</html>
